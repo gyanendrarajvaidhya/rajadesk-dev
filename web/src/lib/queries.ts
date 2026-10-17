@@ -8,8 +8,8 @@ export const useStatus = () =>
   useQuery({
     queryKey: ['status'],
     queryFn: () => api<Status>('/api/status'),
-    // While the sign-in window is open, poll so the page moves on by itself once the developer has signed in.
-    refetchInterval: (q) => (q.state.data?.raja.signingIn ? 2000 : 5 * MIN),
+    // Poll fast while the sign-in window is open or an update is installing, so the page moves on by itself.
+    refetchInterval: (q) => (q.state.data?.raja.signingIn || ['installing', 'restarting'].includes(q.state.data?.update.state ?? '') ? 1500 : 5 * MIN),
   })
 export const useWork = (enabled = true) =>
   useQuery({ queryKey: ['work'], queryFn: () => api<Work>('/api/work'), refetchInterval: 2 * MIN, enabled })

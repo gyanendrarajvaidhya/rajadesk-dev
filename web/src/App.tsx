@@ -15,7 +15,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
-import { AccountPage, UpdateCommand } from '@/pages/account'
+import { AccountPage } from '@/pages/account'
+import { UpdateNow } from '@/components/update-now'
+import { useRestarting } from '@/lib/update'
 import { EpicsPage } from '@/pages/epics'
 import { GithubPage } from '@/pages/github'
 import { TasksPage } from '@/pages/tasks'
@@ -31,6 +33,7 @@ const readPage = (): Page => {
 
 export default function App() {
   const { data: status, error } = useStatus()
+  const restarting = useRestarting()
   const [page, setPage] = useState<Page>(readPage)
   const [epic, setEpic] = useState<string | null>(null)
   const go = (p: Page) => {
@@ -43,6 +46,15 @@ export default function App() {
     window.scrollTo({ top: 0 })
   }
 
+  if (restarting)
+    return (
+      <Shell>
+        <div className="flex flex-col items-center gap-3 py-24 text-sm text-muted-foreground">
+          <Spinner className="size-6" />
+          Updating from version {restarting}: Raja Desk Dev is restarting in a new window. This page reloads by itself.
+        </div>
+      </Shell>
+    )
   if (error)
     return (
       <Shell>
@@ -104,8 +116,8 @@ function Desk({ page, status }: { page: Page; status: Status }) {
         <Alert className="mb-4">
           <AlertTitle>Update available: version {status.update.latest}</AlertTitle>
           <AlertDescription className="w-full space-y-2">
-            <p>Run this in a terminal, then start rajadesk --dev again.</p>
-            <UpdateCommand command={status.update.command} />
+            <p>One click: it installs, restarts in a new window, and this page reloads.</p>
+            <UpdateNow update={status.update} />
           </AlertDescription>
         </Alert>
       )}

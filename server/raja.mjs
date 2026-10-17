@@ -79,19 +79,30 @@ export function forget() {
 
 // ---------- sign-in window (login.mjs in a child process) ----------
 
-let login = null; // { startedAt }
+let login = null; // { startedAt, child }
 let lastLogin = null; // { ok, at, error }
+
+/** "Cancel" on the sign-in card: closes the sign-in window (e.g. it never appeared) so the developer can try again. */
+export function cancelLogin() {
+  if (!login) return { cancelled: false };
+  const { child } = login;
+  login = null;
+  lastLogin = { ok: false, at: Date.now(), error: "Sign-in cancelled." };
+  if (process.platform === "win32") spawn("taskkill", ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+  else child.kill();
+  return { cancelled: true };
+}
 
 export function startLogin() {
   if (login) return { started: false, already: true };
   const child = spawn(process.execPath, [path.join(HERE, "login.mjs")], { windowsHide: true, stdio: ["ignore", "ignore", "pipe"] });
-  const entry = { startedAt: Date.now() };
+  const entry = { startedAt: Date.now(), child };
   let stderr = "";
   child.stderr.on("data", (d) => { stderr += d; });
   const done = (code) => {
     if (login !== entry) return;
     login = null;
-    lastLogin = { ok: code === 0, at: Date.now(), error: code === 0 ? null : stderr.trim().split("\n").pop() || "Sign-in did not finish." };
+    lastLogin = { ok: code === 0, at: Date.now(), error: code === 0 ? null : stderr.trim().split("\n").pop() || `Sign-in did not finish (exit ${code}).` };
     ctx = null;
   };
   child.on("exit", done);
@@ -109,7 +120,7 @@ export function signOut() {
 /** For the sign-in card: is a session saved, is the window open, how did the last attempt end. */
 export async function status() {
   const s = loadSession();
-  const out = { signedIn: false, signingIn: !!login, lastLogin, email: s?.user?.email ?? null, name: null, error: null };
+  const out = { signedIn: false, signingIn: !!login, signingInSince: login?.startedAt ?? null, lastLogin, email: s?.user?.email ?? null, name: null, error: null };
   if (!s?.refresh_token || login) return out;
   try {
     const { me } = await raja();

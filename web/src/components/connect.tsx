@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { ExternalLinkIcon, GitPullRequestIcon, KeyRoundIcon, LogInIcon } from 'lucide-react'
+import { ExternalLinkIcon, GitPullRequestIcon, KeyRoundIcon, LogInIcon, XIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import type { Status } from '@/lib/types'
+import { useNow } from '@/hooks/use-now'
 import { AsyncButton } from '@/components/async-button'
+import { CommandLine } from '@/components/update-now'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -13,14 +15,18 @@ import { Spinner } from '@/components/ui/spinner'
 /** Raja sign-in: opens Raja's own Katyayani SSO page in a separate browser window, no terminal needed. */
 export function RajaSignIn({ status }: { status: Status['raja'] }) {
   const qc = useQueryClient()
-  const start = async () => {
+  const now = useNow()
+  const post = async (path: string) => {
     try {
-      await api('/api/raja/login', {})
+      await api(path, {})
       await qc.invalidateQueries({ queryKey: ['status'] })
     } catch (e) {
       toast.error((e as Error).message)
     }
   }
+  // After 20 s without a sign-in, the window may never have appeared (or be hidden behind others): offer Cancel + the terminal way.
+  const slow = status.signingIn && !!status.signingInSince && now - status.signingInSince > 20_000
+  const failed = status.lastLogin && !status.lastLogin.ok && !status.signingIn
   return (
     <div className="mx-auto max-w-md py-16">
       <Card>
@@ -35,18 +41,24 @@ export function RajaSignIn({ status }: { status: Status['raja'] }) {
         </CardHeader>
         <CardContent className="space-y-3">
           {status.signingIn ? (
-            <div className="flex items-center gap-2 rounded-lg bg-muted/60 p-3 text-sm">
-              <Spinner /> Waiting for you to sign in in the other window…
+            <div className="space-y-2 rounded-lg bg-muted/60 p-3 text-sm">
+              <p className="flex items-center gap-2">
+                <Spinner /> Waiting for you to sign in in the other window…
+              </p>
+              <p className="text-xs text-muted-foreground">Don't see it? Look for a new Chrome or Edge icon in the taskbar: it can open behind this window.</p>
+              <AsyncButton size="sm" variant="outline" onClick={() => post('/api/raja/login/cancel')}>
+                <XIcon /> Cancel
+              </AsyncButton>
             </div>
           ) : (
-            <AsyncButton className="w-full" onClick={start}>
-              <LogInIcon /> {status.expired || status.email ? 'Sign in again' : 'Sign in to Raja'}
+            <AsyncButton className="w-full" onClick={() => post('/api/raja/login')}>
+              <LogInIcon /> {failed || status.expired || status.email ? 'Try again' : 'Sign in to Raja'}
             </AsyncButton>
           )}
-          {status.lastLogin && !status.lastLogin.ok && !status.signingIn && (
+          {failed && (
             <Alert variant="destructive">
               <AlertTitle>Sign-in didn't finish</AlertTitle>
-              <AlertDescription>{status.lastLogin.error}</AlertDescription>
+              <AlertDescription>{status.lastLogin!.error}</AlertDescription>
             </Alert>
           )}
           {status.error && (
@@ -54,6 +66,12 @@ export function RajaSignIn({ status }: { status: Status['raja'] }) {
               <AlertTitle>Signed in, but Raja said no</AlertTitle>
               <AlertDescription>{status.error}</AlertDescription>
             </Alert>
+          )}
+          {(failed || slow) && (
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>Still stuck? Open a new terminal (PowerShell) and run this. It opens the same window and prints any error. Then reload this page.</p>
+              <CommandLine command="rajadesk login" />
+            </div>
           )}
           <p className="text-xs text-muted-foreground">Needs Google Chrome or Microsoft Edge installed. It uses its own window, so your normal browser tabs are untouched.</p>
         </CardContent>

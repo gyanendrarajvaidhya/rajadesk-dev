@@ -26,6 +26,7 @@ if (has("--help", "-h", "help")) {
 
   rajadesk --dev      start it and open ${LINK}
   rajadesk stop       stop it
+  rajadesk login      sign in to Raja from the terminal (if the button on the page doesn't open a window)
   rajadesk --version  show the installed version
 
 Update: npm install -g --prefer-online https://github.com/gyanendrarajvaidhya/rajadesk-dev/archive/refs/heads/main.tar.gz`);
@@ -49,6 +50,15 @@ if (has("stop")) {
   await fetch(`${LINK}api/shutdown`, { method: "POST", headers: { "x-raja-token": token ?? "" } }).catch(() => {});
   console.log("Stopped.");
   process.exit(0);
+}
+
+// `rajadesk login`: the Raja sign-in window from a terminal, with every error printed (fallback when the button fails).
+if (has("login")) {
+  const { spawnSync } = await import("node:child_process");
+  const { fileURLToPath } = await import("node:url");
+  const r = spawnSync(process.execPath, [fileURLToPath(new URL("../server/login.mjs", import.meta.url))], { stdio: "inherit" });
+  if (r.status === 0) console.log("Done. Reload the Raja Desk Dev page.");
+  process.exit(r.status ?? 1);
 }
 
 // Default (and --dev): start the server, or open the one that is already running.

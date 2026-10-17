@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { CopyIcon, KeyRoundIcon, LogOutIcon } from 'lucide-react'
+import { KeyRoundIcon, LogOutIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { d10 } from '@/lib/format'
 import type { Status } from '@/lib/types'
 import { GithubConnect } from '@/components/connect'
+import { UpdateNow } from '@/components/update-now'
 import { ConfirmButton } from '@/components/confirm-button'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -64,32 +65,16 @@ export function AccountPage({ status }: { status: Status }) {
           <CardTitle>Version {status.update.current}</CardTitle>
           <CardDescription>
             {status.update.available
-              ? `Version ${status.update.latest} is out. Run this in a terminal, then start rajadesk --dev again:`
+              ? `Version ${status.update.latest} is out.`
               : status.update.latest
-                ? 'You have the latest version. To reinstall:'
-                : 'To update, run this in a terminal, then start rajadesk --dev again:'}
+                ? 'You have the latest version.'
+                : "Couldn't check for a newer version right now."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <UpdateCommand command={status.update.command} />
+          <UpdateNow update={status.update} label={status.update.available ? `Update to ${status.update.latest}` : 'Reinstall latest'} />
         </CardContent>
       </Card>
-    </div>
-  )
-}
-
-export function UpdateCommand({ command }: { command: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 font-mono text-sm">
-      <span className="min-w-0 flex-1 truncate">{command}</span>
-      <Button
-        size="icon-xs"
-        variant="ghost"
-        title="Copy"
-        onClick={() => navigator.clipboard.writeText(command).then(() => toast.success('Copied'))}
-      >
-        <CopyIcon />
-      </Button>
     </div>
   )
 }

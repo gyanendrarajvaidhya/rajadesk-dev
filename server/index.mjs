@@ -9,22 +9,24 @@ import { fileURLToPath } from "node:url";
 import * as rajaSession from "./raja.mjs";
 import * as work from "./work.mjs";
 import * as github from "./github.mjs";
+import * as updater from "./update.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, "..");
 const PUBLIC = path.join(ROOT, "public");
 const VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
 const TOKEN = crypto.randomBytes(24).toString("hex");
+let PORT = 4646;
 const MIME = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon",
   ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf",
 };
 
-// ---------- version check (once an hour, from the public repo) ----------
+// ---------- version check (every 15 minutes, from the public repo) ----------
 let latest = { version: null, at: 0 };
 async function update() {
-  if (Date.now() - latest.at > 60 * 60 * 1000) {
+  if (Date.now() - latest.at > 15 * 60 * 1000) {
     latest = { version: await github.latestVersion(), at: Date.now() };
   }
   const newer = latest.version && cmp(latest.version, VERSION) > 0;
@@ -32,7 +34,8 @@ async function update() {
     current: VERSION,
     latest: latest.version,
     available: !!newer,
-    command: `npm install -g --prefer-online https://github.com/${github.UPDATE_REPO}/archive/refs/heads/main.tar.gz`,
+    command: updater.COMMAND,
+    ...updater.status(), // state: idle | installing | restarting | failed (the "Update now" button)
   };
 }
 const cmp = (a, b) => {
@@ -45,7 +48,7 @@ const cmp = (a, b) => {
 const bad = (msg) => Object.assign(new Error(msg), { status: 400 });
 
 const GET_ROUTES = [
-  [/^\/api\/ping$/, () => ({ app: "rajadesk-dev", version: VERSION, pid: process.pid })],
+  [/^\/api\/ping$/, () => ({ app: "rajadesk-dev", version: VERSION, pid: process.pid, update: updater.status().state })],
   [/^\/api\/status$/, async () => ({ raja: await rajaSession.status(), github: github.status(), update: await update(), newTokenUrl: github.NEW_TOKEN_URL })],
   [/^\/api\/work$/, () => work.work()],
   [/^\/api\/epic\/(EPIC-\d+)$/i, (m) => work.epicDetail(m[1])],
@@ -55,6 +58,8 @@ const GET_ROUTES = [
 const POST_ROUTES = [
   [/^\/api\/raja\/login$/, () => rajaSession.startLogin()],
   [/^\/api\/raja\/logout$/, () => rajaSession.signOut()],
+  [/^\/api\/raja\/login\/cancel$/, () => rajaSession.cancelLogin()],
+  [/^\/api\/update$/, () => updater.start({ port: PORT })],
   [/^\/api\/github\/token$/, (m, b) => github.connect(b.token)],
   [/^\/api\/github\/disconnect$/, () => github.disconnect()],
   [/^\/api\/task\/([0-9a-f-]{36})\/(play|pause|status|check)$/i, (m, b) => {
@@ -142,6 +147,7 @@ export function start({ port, onListening, onBusy }) {
     if (err.code === "EADDRINUSE") return onBusy?.();
     throw err;
   });
+  PORT = port;
   server.listen(port, "127.0.0.1", () => onListening?.(`http://127.0.0.1:${port}/`));
   return server;
 }

@@ -4,6 +4,7 @@ export type Status = {
   raja: {
     signedIn: boolean
     signingIn: boolean
+    signingInSince?: number | null
     lastLogin: { ok: boolean; at: number; error: string | null } | null
     email: string | null
     name: string | null
@@ -21,7 +22,19 @@ export type Status = {
     savedAt?: string
     error?: string | null
   }
-  update: { current: string; latest: string | null; available: boolean; command: string }
+  update: {
+    current: string
+    latest: string | null
+    available: boolean
+    command: string
+    /** The Update now button: idle | installing | restarting | failed. */
+    state: 'idle' | 'installing' | 'restarting' | 'failed'
+    error: string | null
+    /** Gyan's git checkout: updates with git pull, so no button. */
+    sourceCopy: boolean
+    /** Server process id: a new one answering /api/ping means the restart finished. */
+    pid: number
+  }
   newTokenUrl: string
 }
 
