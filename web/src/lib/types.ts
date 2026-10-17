@@ -54,6 +54,7 @@ export type Task = {
   due_today: boolean
   epic_hid: string
   epic_title: string
+  prs: { id: string; pr_url: string; label: string; state: string | null; merged_at: string | null }[]
 }
 
 export type Ticket = {

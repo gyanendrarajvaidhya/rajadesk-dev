@@ -60,7 +60,7 @@ const POST_ROUTES = [
   [/^\/api\/task\/([0-9a-f-]{36})\/(play|pause|status|check)$/i, (m, b) => {
     if (m[2] === "play") return work.play(m[1]);
     if (m[2] === "pause") return work.pause(m[1]);
-    if (m[2] === "status") return work.setTaskStatus(m[1], b.to, b.reason);
+    if (m[2] === "status") return work.setTaskStatus(m[1], b.to, b.reason, b.prUrl);
     if (!b.itemId) throw bad("itemId is missing");
     return work.setChecklistItem(m[1], b.itemId, !!b.checked);
   }],

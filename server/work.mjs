@@ -77,12 +77,13 @@ async function enrichEpics(c, epics) {
   ]);
   const taskIds = tasks.map((t) => t.id);
   const ticketIds = [...new Set(links.map((l) => l.ticket_id).filter(Boolean))];
-  const [elapsed, ticks, tickets, sla] = await Promise.all([
+  const [elapsed, ticks, tickets, sla, taskPrs] = await Promise.all([
     taskIds.length ? sb.from("v_task_elapsed").select("task_id,developer_id,completed_seconds,running_since").in("task_id", taskIds).then(must) : [],
     taskIds.length ? sb.from("task_checklist_ticks").select("task_id,item_id").in("task_id", taskIds).then((r) => r.data ?? []) : [],
     ticketIds.length ? sb.from("v_ticket_with_number").select("id,human_id,title,status,priority,type,project_id").in("id", ticketIds).is("deleted_at", null).then(must) : [],
     // SLA is optional: if Raja doesn't let a developer read it, tickets simply show no SLA clock.
     ticketIds.length ? sb.from("v_ticket_sla_status").select("ticket_id,sla_code,threshold_hours,elapsed_hours,breached").in("ticket_id", ticketIds).then((r) => r.data ?? []) : [],
+    taskIds.length ? sb.from("v_task_prs").select("id,task_id,pr_url,state,merged_at").in("task_id", taskIds).then((r) => r.data ?? []) : [],
   ]);
 
   const name = (id) => (id ? dir.devById.get(id)?.name ?? "?" : null);
@@ -122,6 +123,7 @@ async function enrichEpics(c, epics) {
         overdue: open && !!t.deadline && t.deadline < today,
         due_today: open && t.deadline === today,
         epic_hid: e.human_id, epic_title: e.title,
+        prs: taskPrs.filter((p) => p.task_id === t.id).map((p) => ({ ...p, label: p.pr_url.replace(/^https?:\/\/github\.com\//, "") })),
       };
     });
     return {
@@ -264,8 +266,19 @@ export async function pause(taskId) {
   await pauseTimer(sb, me, taskId);
 }
 
-/** Same checks as Raja: allowed transitions, deadline to start, SP approved + DoD ticked to finish, reason to reopen. */
-export async function setTaskStatus(taskId, to, reason) {
+/** Links a GitHub PR to a task (Raja's task_prs, same insert as epic_prs). A PR already on the task is a no-op. */
+async function addTaskPr(sb, me, taskId, rawUrl) {
+  const prUrl = normalizePrUrl(rawUrl);
+  const existing = must(await sb.from("task_prs").select("id").eq("task_id", taskId).eq("pr_url", prUrl).limit(1));
+  if (!existing.length) must(await sb.from("task_prs").insert({ id: crypto.randomUUID(), task_id: taskId, pr_url: prUrl, created_by: me.id }), "link PR");
+}
+
+/**
+ * Same checks as Raja: allowed transitions, deadline to start, SP approved to finish, reason to reopen.
+ * Review / Done: an optional PR link is added to the task first, and any unticked Definition of Done items are ticked
+ * (Gyan, 2026-10-17: "PR optional, the 5 points auto checked").
+ */
+export async function setTaskStatus(taskId, to, reason, prUrl) {
   const { sb, me } = await raja();
   const task = must(await sb.from("tasks").select("id,status,deadline,sp_approved,type,assigned_to").eq("id", taskId).single());
   const allowed = TASK_TRANSITIONS[task.status] ?? [];
@@ -273,9 +286,9 @@ export async function setTaskStatus(taskId, to, reason) {
   if (to === "in_progress" && !task.deadline) throw Object.assign(new Error("This task has no deadline. Set one in Raja before starting it."), { status: 400 });
   if (to === "in_review" || to === "done") {
     if (!task.sp_approved) throw Object.assign(new Error("Story points aren't approved yet. Ask your approver in Raja."), { status: 400 });
-    // Unlike Gyan's own Desk, nothing is auto-ticked here: the developer confirms each Definition of Done item.
+    if (String(prUrl ?? "").trim()) await addTaskPr(sb, me, taskId, prUrl);
     const left = (await taskChecklist(sb, taskId, task.type ?? "development")).filter((i) => !i.checked);
-    if (left.length) throw Object.assign(new Error(`Tick the Definition of Done checklist first (${left.length} left).`), { status: 400 });
+    for (const i of left) await setChecklistItem(taskId, i.id, true);
   }
   if (to === "reopened") {
     if (!reason?.trim()) throw Object.assign(new Error("A reason is required to reopen."), { status: 400 });
