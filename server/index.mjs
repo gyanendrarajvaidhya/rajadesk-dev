@@ -32,7 +32,7 @@ async function update() {
     current: VERSION,
     latest: latest.version,
     available: !!newer,
-    command: `npm install -g git+https://github.com/${github.UPDATE_REPO}.git`,
+    command: `npm install -g https://github.com/${github.UPDATE_REPO}/archive/refs/heads/main.tar.gz`,
   };
 }
 const cmp = (a, b) => {

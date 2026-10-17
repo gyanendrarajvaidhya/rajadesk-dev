@@ -6,10 +6,10 @@ as the signed-in developer, so Raja records it under their name.
 
 ## Install (once)
 
-Needs Node.js 20+, Git, and Google Chrome or Microsoft Edge.
+Needs Node.js 20+ and Google Chrome or Microsoft Edge. (Install from the tarball, not `git+https://…`: npm 11 links global git installs to a temp folder it then deletes.)
 
 ```
-npm install -g git+https://github.com/gyanendrarajvaidhya/rajadesk-dev.git
+npm install -g https://github.com/gyanendrarajvaidhya/rajadesk-dev/archive/refs/heads/main.tar.gz
 ```
 
 ## Run (every day)
