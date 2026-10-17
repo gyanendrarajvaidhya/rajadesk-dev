@@ -9,7 +9,7 @@ as the signed-in developer, so Raja records it under their name.
 Needs Node.js 20+ and Google Chrome or Microsoft Edge. (Install from the tarball, not `git+https://…`: npm 11 links global git installs to a temp folder it then deletes.)
 
 ```
-npm install -g https://github.com/gyanendrarajvaidhya/rajadesk-dev/archive/refs/heads/main.tar.gz
+npm install -g --prefer-online https://github.com/gyanendrarajvaidhya/rajadesk-dev/archive/refs/heads/main.tar.gz
 ```
 
 ## Run (every day)
@@ -28,7 +28,7 @@ Opens http://127.0.0.1:4646/. Keep the window open while you work; Ctrl+C or `ra
 
 ## Update
 
-Run the install command again. The Account page (and a banner) says when a newer version is out.
+Run the install command again (`--prefer-online` makes npm fetch the new tarball instead of its cached one). The Account page (and a banner) says when a newer version is out.
 
 ## Pages
 

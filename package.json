@@ -1,6 +1,6 @@
 {
   "name": "rajadesk-dev",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Raja Desk for developers: your Raja epics, tasks, play/pause timers and GitHub on your own PC.",
   "type": "module",
   "private": true,
