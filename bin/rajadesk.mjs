@@ -28,7 +28,7 @@ if (has("--help", "-h", "help")) {
   rajadesk stop       stop it
   rajadesk --version  show the installed version
 
-Update: npm install -g github:gyanendrarajvaidhya/rajadesk-dev`);
+Update: npm install -g git+https://github.com/gyanendrarajvaidhya/rajadesk-dev.git`);
   process.exit(0);
 }
 

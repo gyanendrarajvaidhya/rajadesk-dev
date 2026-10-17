@@ -32,7 +32,7 @@ async function update() {
     current: VERSION,
     latest: latest.version,
     available: !!newer,
-    command: `npm install -g github:${github.UPDATE_REPO}`,
+    command: `npm install -g git+https://github.com/${github.UPDATE_REPO}.git`,
   };
 }
 const cmp = (a, b) => {
@@ -102,7 +102,7 @@ function serveStatic(pathname, res) {
   const file = path.resolve(PUBLIC, rel);
   if (!rel || !file.startsWith(PUBLIC + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
     res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-    res.end(rel === "index.html" ? "The page isn't built. Reinstall: npm install -g github:" + github.UPDATE_REPO : "Not found");
+    res.end(rel === "index.html" ? "The page isn't built. Reinstall: npm install -g git+https://github.com/" + github.UPDATE_REPO + ".git" : "Not found");
     return true;
   }
   const ext = path.extname(file).toLowerCase();
