@@ -6,7 +6,7 @@ as the signed-in developer, so Raja records it under their name.
 
 ## Install (once)
 
-Needs Node.js 20+, Git with access to this private repo, and Google Chrome or Microsoft Edge.
+Needs Node.js 20+, Git, and Google Chrome or Microsoft Edge.
 
 ```
 npm install -g git+https://github.com/gyanendrarajvaidhya/rajadesk-dev.git

@@ -119,10 +119,12 @@ export async function summary({ fresh = false } = {}) {
   return data;
 }
 
-/** Newest version in the update repo (its package.json on main), or null when it can't be read. */
+/** Newest version in the (public) update repo: its package.json on main, or null when it can't be read. No token needed. */
 export async function latestVersion() {
   try {
-    const text = await gh(`/repos/${UPDATE_REPO}/contents/package.json?ref=main`, undefined, { raw: true });
+    const res = await fetch(`https://raw.githubusercontent.com/${UPDATE_REPO}/main/package.json`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const text = await res.text();
     return JSON.parse(text).version ?? null;
   } catch {
     return null;

@@ -21,10 +21,10 @@ const MIME = {
   ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf",
 };
 
-// ---------- version check (once an hour, needs a GitHub token that can read the update repo) ----------
+// ---------- version check (once an hour, from the public repo) ----------
 let latest = { version: null, at: 0 };
 async function update() {
-  if (Date.now() - latest.at > 60 * 60 * 1000 && github.status().connected) {
+  if (Date.now() - latest.at > 60 * 60 * 1000) {
     latest = { version: await github.latestVersion(), at: Date.now() };
   }
   const newer = latest.version && cmp(latest.version, VERSION) > 0;
