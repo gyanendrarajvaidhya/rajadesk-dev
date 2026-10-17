@@ -1,0 +1,19 @@
+{
+  "name": "doom-64 (light) + darkmatter (dark)",
+  "url": null,
+  "light": {
+    "name": "doom-64",
+    "url": "https://tweakcn.com/r/themes/doom-64.json"
+  },
+  "dark": {
+    "name": "darkmatter",
+    "url": "https://tweakcn.com/r/themes/darkmatter.json"
+  },
+  "appliedAt": "2026-10-01",
+  "fontPackages": [
+    "@fontsource/oxanium",
+    "@fontsource/source-code-pro",
+    "@fontsource/geist-mono",
+    "@fontsource/jetbrains-mono"
+  ]
+}

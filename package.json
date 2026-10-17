@@ -1,0 +1,31 @@
+{
+  "name": "rajadesk-dev",
+  "version": "0.1.0",
+  "description": "Raja Desk for developers: your Raja epics, tasks, play/pause timers and GitHub on your own PC.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "rajadesk": "bin/rajadesk.mjs"
+  },
+  "files": [
+    "bin",
+    "server",
+    "public"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node bin/rajadesk.mjs --dev",
+    "build": "npm --prefix web run build",
+    "web:dev": "npm --prefix web run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gyanendrarajvaidhya/rajadesk-dev.git"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "playwright-core": "^1.63.0"
+  }
+}
